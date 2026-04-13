@@ -1,3 +1,21 @@
+<?php
+// PHP logic to handle the letters
+$file = 'letters.json';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_letter'])) {
+    $current_data = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+    $new_letter = [
+        "name" => htmlspecialchars($_POST['sender_name']),
+        "message" => htmlspecialchars($_POST['message_text']),
+        "date" => date("F j, Y, g:i a") 
+    ];
+    $current_data[] = $new_letter;
+    file_put_contents($file, json_encode($current_data));
+    // Redirect to prevent form resubmission and jump to the vault page
+    header("Location: " . $_SERVER['PHP_SELF'] . "?sent=true#page5");
+    exit();
+}
+$all_letters = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,9 +68,10 @@
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 3rem; border-radius: 40px;
+            padding: 2.5rem; border-radius: 40px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(199, 125, 255, 0.2);
-            max-width: 450px; width: 80%; z-index: 10;
+            max-width: 450px; width: 85%; z-index: 10;
+            max-height: 85vh; overflow-y: auto;
         }
 
         h1 { font-family: 'Dancing Script', cursive; font-size: 3rem; color: var(--glow-purple); margin-bottom: 0.5rem; text-shadow: 0 0 15px rgba(199, 125, 255, 0.6); }
@@ -60,34 +79,25 @@
 
         .btn-romantic {
             background: transparent; color: white; border: 1px solid var(--glow-purple);
-            padding: 12px 40px; border-radius: 100px; cursor: inherit;
-            font-family: 'Poppins', sans-serif; font-weight: 400; margin-top: 30px;
+            padding: 12px 30px; border-radius: 100px; cursor: inherit;
+            font-family: 'Poppins', sans-serif; font-weight: 400; margin: 10px;
             transition: all 0.4s; text-transform: uppercase; letter-spacing: 2px;
+            display: inline-block;
         }
 
         .btn-romantic:hover { background: var(--glow-purple); box-shadow: 0 0 25px var(--glow-purple); transform: translateY(-2px); }
 
-        .photo-frame { width: 200px; height: 200px; border-radius: 50%; border: 3px solid var(--glow-purple); padding: 10px; margin-bottom: 20px; box-shadow: 0 0 30px rgba(199, 125, 255, 0.3); display: inline-block; overflow: hidden; }
+        .photo-frame { width: 180px; height: 180px; border-radius: 50%; border: 3px solid var(--glow-purple); padding: 10px; margin-bottom: 20px; box-shadow: 0 0 30px rgba(199, 125, 255, 0.3); display: inline-block; overflow: hidden; }
         .photo-frame img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 
         .rain-polaroid {
-            position: absolute;
-            width: 130px;
-            background: white;
-            padding: 8px 8px 25px 8px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            z-index: 5;
-            top: -250px; 
-            animation: drop linear forwards;
-            pointer-events: all;
-            will-change: transform;
+            position: absolute; width: 130px; background: white;
+            padding: 8px 8px 25px 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            z-index: 5; top: -250px; animation: drop linear forwards;
+            pointer-events: all; will-change: transform;
         }
 
-        .rain-polaroid img {
-            width: 100%; height: 110px;
-            object-fit: cover; display: block;
-            pointer-events: none; 
-        }
+        .rain-polaroid img { width: 100%; height: 110px; object-fit: cover; display: block; pointer-events: none; }
 
         @keyframes drop {
             from { transform: translateY(0) rotate(0deg); }
@@ -95,16 +105,43 @@
         }
 
         .letter-container {
-            max-width: 600px; max-height: 50vh; overflow-y: auto;
+            max-width: 600px; max-height: 40vh; overflow-y: auto;
             padding: 20px; text-align: left; font-family: 'Playfair Display', serif;
-            font-size: 1.2rem; line-height: 1.8; color: #f3e8ff;
+            font-size: 1.1rem; line-height: 1.8; color: #f3e8ff;
         }
 
-        .letter-container::-webkit-scrollbar { width: 5px; }
-        .letter-container::-webkit-scrollbar-thumb { background: var(--glow-purple); border-radius: 10px; }
+        .letter-container::-webkit-scrollbar, .glass-card::-webkit-scrollbar { width: 5px; }
+        .letter-container::-webkit-scrollbar-thumb, .glass-card::-webkit-scrollbar-thumb { background: var(--glow-purple); border-radius: 10px; }
 
         .floating-heart { position: absolute; pointer-events: none; color: var(--vibrant-purple); opacity: 0.3; animation: floatUp 8s linear infinite; }
         @keyframes floatUp { from { transform: translateY(105vh); } to { transform: translateY(-10vh); } }
+
+        /* FORM STYLING */
+        input, textarea {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glow-purple);
+            border-radius: 10px; padding: 10px; color: white; margin-top: 10px; box-sizing: border-box;
+        }
+
+        /* NEW CLICK-TO-OPEN STYLES */
+        .vault-message-item {
+            background: rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 15px;
+            text-align: left; border: 1px solid rgba(199, 125, 255, 0.2); transition: 0.3s; overflow: hidden;
+        }
+        summary {
+            padding: 15px; list-style: none; cursor: pointer; outline: none;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary:hover { background: rgba(199, 125, 255, 0.1); }
+        summary::after { content: '✉️'; font-size: 1.2rem; transition: 0.3s; }
+        details[open] summary::after { content: '📖'; transform: rotate(360deg); }
+        
+        .letter-content {
+            padding: 0 15px 15px 15px; border-top: 1px dashed rgba(199, 125, 255, 0.3);
+            animation: slideDown 0.4s ease-out; color: #f3e8ff; line-height: 1.6;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .vault-date { font-size: 0.65rem; color: var(--glow-purple); opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -118,6 +155,7 @@
             <h1>Happy Monthsary</h1>
             <p class="timer-text" id="timer">Counting moments...</p>
             <button class="btn-romantic" onclick="toPage(2)">Unlock My Heart</button>
+            <button class="btn-romantic" onclick="toPage(5)">The Letter Vault</button>
         </div>
     </div>
 
@@ -151,7 +189,51 @@
                 <p>Happy Monthsary, my love. Forever isn't long enough.</p>
                 <p style="text-align: right; font-family: 'Dancing Script'; font-size: 2rem;">Always Yours, <br> Mahalll</p>
             </div>
-            <button class="btn-romantic" onclick="toPage(1)">Start Over</button>
+            <button class="btn-romantic" onclick="toPage(1)">Go Back</button>
+        </div>
+    </div>
+
+    <div id="page5" class="screen">
+        <div class="glass-card" id="vault-main">
+            <h1>Letter Vault 💜</h1>
+            <p>Would you like to write a new letter or read our old ones?</p>
+            <button class="btn-romantic" onclick="toggleVault('write')">Write a Letter</button>
+            <button class="btn-romantic" onclick="toggleVault('read')">Read Letters</button>
+            <br>
+            <button class="btn-romantic" onclick="toPage(1)">Back to Start</button>
+        </div>
+
+        <div class="glass-card" id="vault-write" style="display:none;">
+            <h1>Write to Me</h1>
+            <form method="POST">
+                <input type="text" name="sender_name" placeholder="Your Name" required>
+                <textarea name="message_text" rows="5" placeholder="Write your heart out..." required></textarea>
+                <button type="submit" name="send_letter" class="btn-romantic">Send to Vault ✨</button>
+            </form>
+            <button class="btn-romantic" onclick="toggleVault('main')">Cancel</button>
+        </div>
+
+        <div class="glass-card" id="vault-read" style="display:none; max-width: 500px;">
+            <h1>Our Letters</h1>
+            <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 15px;">Click a name to open the letter ✨</p>
+            <div style="max-height: 50vh; overflow-y: auto; padding-right: 10px;">
+                <?php if (empty($all_letters)): ?>
+                    <p>No letters yet. Be the first to write one!</p>
+                <?php else: ?>
+                    <?php foreach (array_reverse($all_letters) as $l): ?>
+                        <details class="vault-message-item">
+                            <summary>
+                                <strong style="color: var(--soft-lavender);"><?= $l['name'] ?></strong>
+                                <span class="vault-date"><?= $l['date'] ?></span>
+                            </summary>
+                            <div class="letter-content">
+                                <p><?= nl2br($l['message']) ?></p>
+                            </div>
+                        </details>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+            <button class="btn-romantic" onclick="toggleVault('main')">Back</button>
         </div>
     </div>
 
@@ -166,6 +248,21 @@
             document.getElementById('page' + num).classList.add('active');
             if(num === 3) startRain();
             else stopRain();
+        }
+
+        function toggleVault(mode) {
+            document.getElementById('vault-main').style.display = 'none';
+            document.getElementById('vault-write').style.display = 'none';
+            document.getElementById('vault-read').style.display = 'none';
+
+            if(mode === 'write') document.getElementById('vault-write').style.display = 'block';
+            else if(mode === 'read') document.getElementById('vault-read').style.display = 'block';
+            else document.getElementById('vault-main').style.display = 'block';
+        }
+
+        if(window.location.search.includes('sent=true')) {
+            toPage(5);
+            toggleVault('read');
         }
 
         function runTimer() {
@@ -185,37 +282,29 @@
             rainInt = setInterval(() => {
                 const container = document.createElement('div');
                 container.className = 'rain-polaroid';
-                
                 const img = document.createElement('img');
                 img.src = myPhotos[Math.floor(Math.random()*myPhotos.length)];
                 container.appendChild(img);
-                
                 const heart = document.createElement('div');
                 heart.innerHTML = '💜';
                 heart.style.cssText = "color:#333; font-size:10px; text-align:center; margin-top:5px; pointer-events:none;";
                 container.appendChild(heart);
-
                 container.style.left = Math.random() * 80 + 'vw';
                 container.style.animationDuration = (Math.random() * 3 + 4) + 's';
                 
-                // DRAG LOGIC
                 const startDrag = (e) => {
                     let isDragging = true;
                     container.style.animationPlayState = 'paused';
                     container.style.zIndex = 1000;
-
                     let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                     let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
                     let rect = container.getBoundingClientRect();
                     let shiftX = clientX - rect.left;
                     let shiftY = clientY - rect.top;
-
                     const moveAt = (pageX, pageY) => {
                         container.style.left = pageX - shiftX + 'px';
                         container.style.top = pageY - shiftY + 'px';
                     }
-
                     const onMove = (event) => {
                         if(isDragging) {
                             let cx = event.type.includes('touch') ? event.touches[0].pageX : event.pageX;
@@ -223,30 +312,22 @@
                             moveAt(cx, cy);
                         }
                     }
-
                     document.addEventListener('mousemove', onMove);
                     document.addEventListener('touchmove', onMove, {passive: false});
-
                     const stopDrag = () => {
                         isDragging = false;
                         document.removeEventListener('mousemove', onMove);
                         document.removeEventListener('touchmove', onMove);
                         container.style.animationPlayState = 'running';
                     };
-
                     document.onmouseup = stopDrag;
                     document.ontouchend = stopDrag;
                 };
-
                 container.onmousedown = startDrag;
                 container.ontouchstart = startDrag;
                 container.ondragstart = () => false;
-
                 document.getElementById('rain-zone').appendChild(container);
-
-                setTimeout(() => {
-                    if (container.parentElement) container.remove();
-                }, 8000);
+                setTimeout(() => { if (container.parentElement) container.remove(); }, 8000);
             }, 700);
         }
 
