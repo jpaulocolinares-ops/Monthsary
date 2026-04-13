@@ -4,7 +4,7 @@ $file = 'letters.json';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_letter'])) {
     $current_data = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
-    
+     
     $new_letter = [
         "name" => htmlspecialchars($_POST['sender_name']),
         "message" => htmlspecialchars($_POST['message_text']),
